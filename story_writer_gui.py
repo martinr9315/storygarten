@@ -4,6 +4,7 @@ from openai import OpenAI
 import time
 import json
 import uuid
+import re
 
 
 class StoryWriter:
@@ -14,6 +15,7 @@ class StoryWriter:
         self.last_message_id = None
 
     def create_assistant(self):
+        print("Calling OpenAI...")
         return self.client.beta.assistants.create(
             name="Children's Author",
             instructions=("You are a creative, illustrated children's book author "
@@ -26,14 +28,17 @@ class StoryWriter:
         )
 
     def create_thread(self):
+        print("Calling OpenAI...")
         return self.client.beta.threads.create()
 
     def create_message_and_run(self, role, content):
+        print("Calling OpenAI...")
         message = self.client.beta.threads.messages.create(
             thread_id=self.thread.id,
             role=role,
             content=content,
         )
+        print("Calling OpenAI...")
         run = self.client.beta.threads.runs.create(
             thread_id=self.thread.id,
             assistant_id=self.assistant.id,
@@ -104,6 +109,7 @@ class StoryGUI:
     def satisfaction_loop(self, prompt, action):
         satisfaction = 'no'
         while satisfaction != 'yes':
+            result = action()
             result_message = self.writer.get_thread_messages()
             messagebox.showinfo(prompt, result_message)
             satisfaction = self.get_user_input(f"Are you satisfied with the given {prompt}? (yes/no): ")
@@ -112,14 +118,11 @@ class StoryGUI:
     def generate_story(self):
         topic = self.get_user_input("Please enter the topic for the story: ")
         audience = self.get_user_input("Please enter the target audience: ")
-        outline_json = self.satisfaction_loop("outline", lambda: self.writer.create_message_and_run("user", f"Please write a story outline explaining {topic} for {audience}. The output should be a JSON with field 'characters', 'setting', 'plot'."))
-        print(outline_json)
-        outline = json.loads(outline_json)
-        print(outline)
-        print(outline['characters'])
+        outline_json = markdown_json_to_dict(self.satisfaction_loop("outline", lambda: self.writer.create_message_and_run("user", f"Please write a story outline explaining {topic} for {audience}. The output should be a JSON with field 'characters', 'setting', 'plot'.")))
+        print(outline_json['characters'])
         # TODO: if satisfied with outline, need physical description of each character in the story to use for image generation. 
         story = self.satisfaction_loop("story", lambda: self.writer.create_message_and_run("user", "Please flesh out the outline to a full story"))
-        storyboard = self.satisfaction_loop("page breaks", lambda: self.writer.create_message_and_run("user", "Please break the story up into pages and suggest an accompanying illustration for each page in JSON format with the fields 'page_number', 'text', 'illustration'"))
+        storyboard = markdown_json_to_dict(self.satisfaction_loop("page breaks", lambda: self.writer.create_message_and_run("user", "Please break the story up into pages and suggest an accompanying illustration for each page in JSON format with the fields 'page_number', 'text', 'illustration'")))
 
         uid = uuid.uuid4()
         with open(f'./storyboards/{uid}.json', 'w') as f:
@@ -150,6 +153,17 @@ class StoryGUI:
         return pages
 
 
+def markdown_json_to_dict(markdown_str):
+    # Assuming the JSON is in a code block, extract it
+    # Adjust the regular expression according to your markdown format
+    json_str = re.search(r'```json(.+?)```', markdown_str, re.DOTALL)
+    if json_str:
+        json_str = json_str.group(1).strip()
+        return json.loads(json_str)
+    else:
+        raise ValueError("No JSON found in the markdown")
+
+
 if __name__ == "__main__":
     gui = StoryGUI()
     pages = gui.generate_story()
@@ -157,4 +171,5 @@ if __name__ == "__main__":
     # storyboard = gui.load_storyboard("f9a3274a-ee80-41dd-a003-3bb3ea78ba51")
     # images = gui.generate_images(storyboard)
     # print(images)
+    exit(0)
     
