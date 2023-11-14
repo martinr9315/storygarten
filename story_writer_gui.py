@@ -103,9 +103,7 @@ class StoryGUI:
 
     def satisfaction_loop(self, prompt, action):
         satisfaction = 'no'
-        result = None
         while satisfaction != 'yes':
-            result = action()
             result_message = self.writer.get_thread_messages()
             messagebox.showinfo(prompt, result_message)
             satisfaction = self.get_user_input(f"Are you satisfied with the given {prompt}? (yes/no): ")
@@ -123,14 +121,14 @@ class StoryGUI:
         story = self.satisfaction_loop("story", lambda: self.writer.create_message_and_run("user", "Please flesh out the outline to a full story"))
         storyboard = self.satisfaction_loop("page breaks", lambda: self.writer.create_message_and_run("user", "Please break the story up into pages and suggest an accompanying illustration for each page in JSON format with the fields 'page_number', 'text', 'illustration'"))
 
-        uuid = uuid.uuid4()
-        with open(f'./storyboards/{uuid}.json', 'w') as f:
+        uid = uuid.uuid4()
+        with open(f'./storyboards/{uid}.json', 'w') as f:
             json.dump(storyboard, f)
 
         return storyboard
     
-    def load_storyboard(self, uuid):
-        with open(f'./storyboards/{uuid}.json', 'r') as f:
+    def load_storyboard(self, uid):
+        with open(f'./storyboards/{uid}.json', 'r') as f:
             storyboard = json.load(f)
         return storyboard
 
@@ -160,4 +158,3 @@ if __name__ == "__main__":
     # images = gui.generate_images(storyboard)
     # print(images)
     
-
