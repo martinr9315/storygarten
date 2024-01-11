@@ -1,5 +1,5 @@
 # StoryGarten
-*(WIP)*
+Now available as a GPT on OpenAI's GPT store! Find it [here](https://chat.openai.com/g/g-fQiOj22nE-storygarten)!
 An assistant that uses the new OpenAI Assistant API to write children's books. Just a fun little project to experiment with the new assistant & threads API. Future plans include adding DALL-E integration to illustrate pages.
 
 
